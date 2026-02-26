@@ -4,7 +4,7 @@ const path = require("path");
 const https = require("https");
 const { EventEmitter } = require("events");
 
-const { kPackageRoot, kRootDir } = require("../../lib/server/constants");
+const { kNpmPackageRoot, kRootDir } = require("../../lib/server/constants");
 const modulePath = require.resolve("../../lib/server/alphaclaw-version");
 const originalExec = childProcess.exec;
 const originalHttpsGet = https.get;
@@ -43,7 +43,6 @@ describe("server/alphaclaw-version", () => {
     const service = createAlphaclawVersionService();
     const version = service.readAlphaclawVersion();
 
-    const kNpmPackageRoot = path.resolve(kPackageRoot, "..");
     const expectedPkg = JSON.parse(
       fs.readFileSync(path.join(kNpmPackageRoot, "package.json"), "utf8"),
     );
