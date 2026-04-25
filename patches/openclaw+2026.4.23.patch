@@ -1,0 +1,13 @@
+diff --git a/node_modules/openclaw/dist/server.impl-DhtU4okW.js b/node_modules/openclaw/dist/server.impl-DhtU4okW.js
+index 93890d3..7b3c701 100644
+--- a/node_modules/openclaw/dist/server.impl-DhtU4okW.js
++++ b/node_modules/openclaw/dist/server.impl-DhtU4okW.js
+@@ -11165,7 +11165,7 @@ function attachGatewayWsMessageHandler(params) {
+ 					close(1008, truncateCloseReason(authMessage));
+ 				};
+ 				const clearUnboundScopes = () => {
+-					if (scopes.length > 0) {
++					if (scopes.length > 0 && !sharedAuthOk) {
+ 						scopes = [];
+ 						connectParams.scopes = scopes;
+ 					}
