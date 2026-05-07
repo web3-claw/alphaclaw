@@ -187,6 +187,21 @@ describe("frontend/api", () => {
     );
   });
 
+  it("approveDevice encodes ids and throws API errors", async () => {
+    global.fetch.mockResolvedValue(mockJsonResponse(403, { ok: false, error: "missing scope" }));
+    const api = await loadApiModule();
+
+    await expect(api.approveDevice("req/admin 1")).rejects.toThrow("missing scope");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/devices/req%2Fadmin%201/approve",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.any(Headers),
+      }),
+    );
+  });
+
   it("fetchUsageSummary calls usage summary endpoint", async () => {
     global.fetch.mockResolvedValue(mockJsonResponse(200, { ok: true, summary: { daily: [] } }));
     const api = await loadApiModule();

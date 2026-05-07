@@ -359,17 +359,24 @@ describe("server/routes/system", () => {
   });
 
   it("returns tokenized dashboard URL when OpenClaw CLI prints a token", async () => {
-    const deps = createSystemDeps();
-    deps.clawCmd.mockResolvedValueOnce({
-      ok: true,
-      stdout: "Dashboard URL: http://127.0.0.1:18789/#token=abc123",
-    });
-    const app = createApp(deps);
+    const previousEnvToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+    delete process.env.OPENCLAW_GATEWAY_TOKEN;
+    try {
+      const deps = createSystemDeps();
+      deps.clawCmd.mockResolvedValueOnce({
+        ok: true,
+        stdout: "Dashboard URL: http://127.0.0.1:18789/#token=abc123",
+      });
+      const app = createApp(deps);
 
-    const res = await request(app).get("/api/gateway/dashboard");
+      const res = await request(app).get("/api/gateway/dashboard");
 
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true, url: "/openclaw/#token=abc123" });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true, url: "/openclaw/#token=abc123" });
+    } finally {
+      if (previousEnvToken === undefined) delete process.env.OPENCLAW_GATEWAY_TOKEN;
+      else process.env.OPENCLAW_GATEWAY_TOKEN = previousEnvToken;
+    }
   });
 
   it("falls back to plain configured gateway token for dashboard URL", async () => {
@@ -394,11 +401,12 @@ describe("server/routes/system", () => {
       url: "/openclaw/#token=cfg-token%2Bvalue",
       source: "config",
     });
+    expect(deps.clawCmd).not.toHaveBeenCalled();
   });
 
   it("falls back to OPENCLAW_GATEWAY_TOKEN from env file for dashboard URL", async () => {
     const previousEnvToken = process.env.OPENCLAW_GATEWAY_TOKEN;
-    delete process.env.OPENCLAW_GATEWAY_TOKEN;
+    process.env.OPENCLAW_GATEWAY_TOKEN = "";
     try {
       const deps = createSystemDeps();
       deps.clawCmd.mockResolvedValueOnce({
@@ -487,6 +495,44 @@ describe("server/routes/system", () => {
         url: "/openclaw/#token=env-file-token",
         source: "config",
       });
+    } finally {
+      if (previousEnvToken === undefined) delete process.env.OPENCLAW_GATEWAY_TOKEN;
+      else process.env.OPENCLAW_GATEWAY_TOKEN = previousEnvToken;
+    }
+  });
+
+  it("resolves configured object SecretRefs for dashboard URL", async () => {
+    const previousEnvToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+    process.env.OPENCLAW_GATEWAY_TOKEN = "object-ref-token+value";
+    try {
+      const deps = createSystemDeps();
+      deps.fs.readFileSync.mockImplementation((filePath) => {
+        if (String(filePath).endsWith("openclaw.json")) {
+          return JSON.stringify({
+            gateway: {
+              auth: {
+                token: {
+                  source: "env",
+                  provider: "default",
+                  id: "OPENCLAW_GATEWAY_TOKEN",
+                },
+              },
+            },
+          });
+        }
+        throw new Error("unexpected file");
+      });
+      const app = createApp(deps);
+
+      const res = await request(app).get("/api/gateway/dashboard");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        ok: true,
+        url: "/openclaw/#token=object-ref-token%2Bvalue",
+        source: "config",
+      });
+      expect(deps.clawCmd).not.toHaveBeenCalled();
     } finally {
       if (previousEnvToken === undefined) delete process.env.OPENCLAW_GATEWAY_TOKEN;
       else process.env.OPENCLAW_GATEWAY_TOKEN = previousEnvToken;
