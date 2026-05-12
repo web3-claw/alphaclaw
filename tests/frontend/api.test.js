@@ -439,6 +439,19 @@ describe("frontend/api", () => {
     expect(result).toEqual({ ok: true, committed: true });
   });
 
+  it("fetchBrowseTree defaults to a bounded tree depth", async () => {
+    global.fetch.mockResolvedValue(mockJsonResponse(200, { ok: true, tree: [] }));
+    const api = await loadApiModule();
+
+    const result = await api.fetchBrowseTree();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/browse/tree?depth=3",
+      expect.objectContaining({ headers: expect.any(Headers) }),
+    );
+    expect(result).toEqual({ ok: true, tree: [] });
+  });
+
   it("fetchBrowseFileDiff calls git diff endpoint with encoded path", async () => {
     global.fetch.mockResolvedValue(mockJsonResponse(200, { ok: true, content: "diff --git" }));
     const api = await loadApiModule();
