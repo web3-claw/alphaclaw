@@ -44,7 +44,7 @@ const createConfigRepo = () => {
   runGit(sourceDir, "add openclaw.json");
   runGit(sourceDir, "commit -m initial");
 
-  runGit(rootDir, `init --bare ${JSON.stringify(remoteDir)}`);
+  runGit(rootDir, `init --bare -b main ${JSON.stringify(remoteDir)}`);
   runGit(sourceDir, `remote add origin ${JSON.stringify(remoteDir)}`);
   runGit(sourceDir, "push -u origin main");
   runGit(rootDir, `clone ${JSON.stringify(remoteDir)} ${JSON.stringify(openclawDir)}`);
